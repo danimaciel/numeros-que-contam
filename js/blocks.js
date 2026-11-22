@@ -189,7 +189,7 @@ BLOCKS.proporcao = {
           const hl = i < k ? E.out5(prog(lt, 1.3 + i * .05, 1.7 + i * .05)) : 0;
           const cx = x0 + (c + .5) * s, cy = y0 + (r + .5) * s * 1.05;
           x.save(); x.globalAlpha = clamp(p * 2); x.translate(cx, cy); x.scale(p, p);
-          x.fillStyle = hl > 0 ? mixHex('#2a3a31', T.accent, hl) : '#2a3a31';
+          x.fillStyle = hl > 0 ? mixHex(shade(T.bg, .12), T.accent, hl) : shade(T.bg, .12);
           person(x, 0, 0, s * .92);
           if (hl > 0 && hl < 1) { x.globalAlpha = 1 - hl; x.strokeStyle = T.accent; x.lineWidth = 4; x.beginPath(); x.arc(0, 0, s * (.5 + hl * .25), 0, Math.PI * 2); x.stroke(); }
           x.restore();
@@ -265,7 +265,7 @@ BLOCKS.frase = {
       draw(x, lt, dur) {
         if (d.foto) {
           drawPhoto(x, img(d.foto), { x: 0, y: 0, w: W, h: H }, lt, dur, { s0: 1.2, s1: 1.05, x0: -20, x1: 20, fadeTop: 0 });
-          const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, 'rgba(12,22,17,.85)'); g.addColorStop(.5, 'rgba(12,22,17,.6)'); g.addColorStop(1, 'rgba(12,22,17,.9)');
+          const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, rgba(T.bg, .85)); g.addColorStop(.5, rgba(T.bg, .6)); g.addColorStop(1, rgba(T.bg, .9));
           x.fillStyle = g; x.fillRect(0, 0, W, H);
         }
         const p = E.out5(prog(lt, .1, .9));
@@ -321,7 +321,7 @@ BLOCKS.linha = {
         // área
         x.stroke();
         x.save(); x.globalAlpha = .12 * p; x.fillStyle = T.accent; x.lineTo(hx, top + ch); x.lineTo(X(0), top + ch); x.closePath(); x.fill(); x.restore();
-        if (ga > 0) { x.beginPath(); x.arc(hx, hy, 12, 0, Math.PI * 2); x.fillStyle = T.accent; x.fill(); x.lineWidth = 4; x.strokeStyle = '#0c1611'; x.stroke(); }
+        if (ga > 0) { x.beginPath(); x.arc(hx, hy, 12, 0, Math.PI * 2); x.fillStyle = T.accent; x.fill(); x.lineWidth = 4; x.strokeStyle = T.bg; x.stroke(); }
         const pkp = prog(lt, 2.0 + .0, 2.5);
         if (pkp > 0 && f >= pk - .01) {
           x.beginPath(); x.arc(X(pk), Y(pts[pk].v), 18 + E.back(pkp) * 14 + Math.sin(lt * 7) * 3 * pkp, 0, Math.PI * 2);
@@ -387,7 +387,7 @@ BLOCKS.mapa = {
         for (const uf in BR_PATHS) { m.fillStyle = 'rgba(255,255,255,.045)'; m.fill(BR_PATHS[uf]); }
         vals.forEach((r, i) => {
           const p = E.out5(prog(lt, .5 + i * st, .9 + i * st)); if (p <= 0) return;
-          m.globalAlpha = ma * p; m.fillStyle = mixHex('#24382d', T.accent, .15 + .85 * (max > min ? (r.v - min) / (max - min) : 1)); m.fill(BR_PATHS[r.uf]);
+          m.globalAlpha = ma * p; m.fillStyle = mixHex(shade(T.bg, .1), T.accent, .15 + .85 * (max > min ? (r.v - min) / (max - min) : 1)); m.fill(BR_PATHS[r.uf]);
         });
         m.globalAlpha = ma; m.strokeStyle = 'rgba(244,236,221,.25)'; m.lineWidth = 1.6 * lw; m.lineJoin = 'round';
         for (const uf in BR_PATHS) m.stroke(BR_PATHS[uf]);
@@ -411,7 +411,7 @@ BLOCKS.mapa = {
         const la = fadeAlpha(lt, 1.2, 1.7);
         if (la > 0 && vals.length > 1) {
           x.save(); x.globalAlpha = la;
-          const lg = x.createLinearGradient(640, 0, 1000, 0); lg.addColorStop(0, mixHex('#24382d', T.accent, .15)); lg.addColorStop(1, T.accent);
+          const lg = x.createLinearGradient(640, 0, 1000, 0); lg.addColorStop(0, mixHex(shade(T.bg, .1), T.accent, .15)); lg.addColorStop(1, T.accent);
           x.fillStyle = lg; rrect(x, 640, 1640, 360, 14, 7); x.fill();
           drawText(x, 'menor', 640, 1690, { size: 22, color: '#9AA89F' }); drawText(x, 'maior', 1000, 1690, { size: 22, color: '#9AA89F', align: 'right' });
           x.restore();
@@ -469,7 +469,7 @@ BLOCKS.fechamento = {
 // ---------------------------------------------------------------- LINHA DO TEMPO DO VÍDEO
 const TOTAL = 30, END_A = 25.2, BODY_END = 25.5, OV = .1;
 function buildTimeline(P) {
-  T.accent = P.cor || '#E3B76F'; T.accent2 = P.cor2 || '#6FBF8A'; T.symbol = P.simbolo || 'circulos';
+  T.accent = P.cor || '#E3B76F'; T.accent2 = P.cor2 || '#6FBF8A'; T.bg = P.fundo || '#0c1611'; T.symbol = P.simbolo || 'circulos';
   const list = (P.blocos || []).filter(b => BLOCKS[b.tipo]);
   const hasEnd = !!(P.cartela && P.cartela.ativa);
   const bodyEnd = hasEnd ? BODY_END : TOTAL;

@@ -131,7 +131,7 @@ function drawEscala(x, lt, G = GEO_V) {
       m.lineWidth = clamp(r.w * k, i ? 1.3 : 1.8, 12) * px; polyPath(m, r.pts); m.stroke();
     });
     m.globalAlpha = aRiv * .7 * smooth(z, 12, 40); m.strokeStyle = ESC.cream; m.lineWidth = clamp(.006 * k, 1.2, 7) * px; polyPath(m, Ld.road.pts); m.stroke();
-    if (z > 400) { m.globalAlpha = aRiv * .9 * smooth(z, 400, 900); m.strokeStyle = '#0c1611'; m.setLineDash([10 * px, 10 * px]); m.lineWidth = 1.2 * px; m.stroke(); m.setLineDash([]); }
+    if (z > 400) { m.globalAlpha = aRiv * .9 * smooth(z, 400, 900); m.strokeStyle = T.bg; m.setLineDash([10 * px, 10 * px]); m.lineWidth = 1.2 * px; m.stroke(); m.setLineDash([]); }
   }
   // talhões
   const aParc = smooth(z, 6, 30), aEdge = smooth(z, 50, 160), aRows = smooth(z, 220, 600);
@@ -221,7 +221,7 @@ function seriesMark(x, lt, K, cx, y) {
 // ---------- cartela completa ----------
 function drawEndcard(x, lt, K) {
   K = K || {};
-  const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#16291f'); g.addColorStop(1, '#0b1510');
+  const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, shade(T.bg, .05)); g.addColorStop(1, shade(T.bg, -.1));
   x.fillStyle = g; x.fillRect(0, 0, W, H);
   // marca da série
   const ma = fadeAlpha(lt, .05, .6);
@@ -253,15 +253,15 @@ function drawEndcard(x, lt, K) {
     x.globalAlpha = fa(3.3); x.drawImage(logo, 540 - w / 2, fy + 95 - h / 2, w, h);
   }
   const as = (K.assinatura || '').toUpperCase();
-  if (as) { x.globalAlpha = fa(3.2); drawText(x, as, 540, fy + 200, { size: fitSize(as, 24, 920, false), color: ESC.ink2, align: 'center', ls: 1.5 }); }
-  if (K.link) { x.globalAlpha = fa(3.3); drawText(x, K.link, 540, fy + 262, { size: fitSize(K.link, 26, 940, true), bold: true, color: ESC.ink, align: 'center' }); }
+  if (as) { x.globalAlpha = fa(3.2); drawText(x, as, 540, fy + 200, { size: fitSize(as, 24, 920, false), color: shade(T.bg, .3), align: 'center', ls: 1.5 }); }
+  if (K.link) { x.globalAlpha = fa(3.3); drawText(x, K.link, 540, fy + 262, { size: fitSize(K.link, 26, 940, true), bold: true, color: T.bg, align: 'center' }); }
   x.restore();
 }
 
 // ---------- cartela horizontal (16:9, 1920x1080) — usada na cartela avulsa ----------
 function drawEndcardH(x, lt, K) {
   K = K || {};
-  const G = GEO_H, g = x.createLinearGradient(0, 0, 0, G.h); g.addColorStop(0, '#16291f'); g.addColorStop(1, '#0b1510');
+  const G = GEO_H, g = x.createLinearGradient(0, 0, 0, G.h); g.addColorStop(0, shade(T.bg, .05)); g.addColorStop(1, shade(T.bg, -.1));
   x.fillStyle = g; x.fillRect(0, 0, G.w, G.h);
   const { k } = drawEscala(x, lt, G);
   scaleBar(x, k, fadeAlpha(lt, .3, .8), G);
@@ -291,7 +291,7 @@ function drawEndcardH(x, lt, K) {
     x.globalAlpha = fa(3.1); x.drawImage(logo, 90, fy + 90 - h / 2, w, h);
   }
   const as = (K.assinatura || '').toUpperCase();
-  if (as) { x.globalAlpha = fa(3.2); drawText(x, as, 1830, fy + 78, { size: fitSize(as, 26, 1200, false), color: ESC.ink2, align: 'right', ls: 1.5 }); }
-  if (K.link) { x.globalAlpha = fa(3.3); drawText(x, K.link, 1830, fy + 128, { size: fitSize(K.link, 30, 1200, true), bold: true, color: ESC.ink, align: 'right' }); }
+  if (as) { x.globalAlpha = fa(3.2); drawText(x, as, 1830, fy + 78, { size: fitSize(as, 26, 1200, false), color: shade(T.bg, .3), align: 'right', ls: 1.5 }); }
+  if (K.link) { x.globalAlpha = fa(3.3); drawText(x, K.link, 1830, fy + 128, { size: fitSize(K.link, 30, 1200, true), bold: true, color: T.bg, align: 'right' }); }
   x.restore();
 }

@@ -136,10 +136,10 @@ function select(opts, val, on) {
   const s = h('select', { onchange: e => on(e.target.value) }, opts.map(([v, t]) => h('option', { value: v }, t)));
   s.value = val; return s;
 }
-function colorPicker(key) {
+function colorPicker(key, lista = CORES) {
   const inp = h('input', { type: 'color', value: P[key], oninput: e => { P[key] = e.target.value; changed(); sync(); } });
-  const sel = select([...CORES.map(([n, c]) => [c, n]), ['', 'Outra…']], CORES.some(c => c[1] === P[key]) ? P[key] : '', v => { if (v) { P[key] = v; inp.value = v; changed(); } });
-  const sync = () => { sel.value = CORES.some(c => c[1].toLowerCase() === P[key].toLowerCase()) ? P[key] : ''; };
+  const sel = select([...lista.map(([n, c]) => [c, n]), ['', 'Outra…']], lista.some(c => c[1] === P[key]) ? P[key] : '', v => { if (v) { P[key] = v; inp.value = v; changed(); } });
+  const sync = () => { sel.value = lista.some(c => c[1].toLowerCase() === P[key].toLowerCase()) ? P[key] : ''; };
   return h('div', { class: 'cor' }, sel, inp);
 }
 const timeLabels = [];
@@ -153,6 +153,7 @@ function updateTimes() {
 }
 function renderForm() {
   const root = $('#form'); root.innerHTML = ''; timeLabels.length = 0;
+  if (!P.fundo) P.fundo = FUNDOS[0][1];
   // projeto
   root.append(h('section', { class: 'card' },
     h('h2', {}, 'Projeto'),
@@ -161,6 +162,7 @@ function renderForm() {
       h('div', { class: 'campo' }, h('label', {}, 'Cor de destaque'), colorPicker('cor')),
       h('div', { class: 'campo' }, h('label', {}, 'Cor secundária'), colorPicker('cor2')),
     ),
+    h('div', { class: 'campo' }, h('label', {}, 'Cor de fundo'), colorPicker('fundo', FUNDOS), h('div', { class: 'ajuda' }, 'Prefira cores escuras: os textos do vídeo são claros. A cartela final acompanha a cor de fundo.')),
     h('div', { class: 'grid2' },
       h('div', { class: 'campo' }, h('label', {}, 'Símbolo do fundo'), select(SIMBOLOS, P.simbolo || 'circulos', v => { P.simbolo = v; changed(); })),
       h('div', { class: 'campo' }, h('label', {}, 'Música'), select(MUSICAS.map(m => [m.id, m.nome]), P.musica || 'inovacao', v => { P.musica = v; changed(true); })),

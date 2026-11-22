@@ -35,10 +35,13 @@ function parseList(txt) {
 }
 
 // ---------- tema ----------
+const FUNDOS = [['Verde-floresta', '#0c1611'], ['Azul-petróleo', '#0b1d26'], ['Azul-noite', '#0d1530'], ['Grafite', '#141619'], ['Vinho', '#1f0e14'], ['Terra', '#1f150e'], ['Oliva', '#15190c']];
 const T = { accent: '#E3B76F', accent2: '#6FBF8A', cream: '#F4ECDD', muted: '#9AA89F', bg: '#0c1611', symbol: 'circulos' };
 function hexRgb(h) { h = h.replace('#', ''); if (h.length === 3) h = [...h].map(c => c + c).join(''); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); }
 function rgba(h, a) { const [r, g, b] = hexRgb(h); return `rgba(${r},${g},${b},${a})`; }
-function mixHex(a, b, p) { const A = hexRgb(a), B = hexRgb(b); return `rgb(${A.map((v, i) => Math.round(lerp(v, B[i], p))).join(',')})`; }
+function mixHex(a, b, p) { const A = hexRgb(a), B = hexRgb(b); return '#' + A.map((v, i) => clamp(Math.round(lerp(v, B[i], p)), 0, 255).toString(16).padStart(2, '0')).join(''); }
+// clareia (p > 0) ou escurece (p < 0) uma cor
+const shade = (h, p) => p >= 0 ? mixHex(h, '#ffffff', p) : mixHex(h, '#000000', -p);
 
 // ---------- texto ----------
 const FONT = { sans: '"DejaVu Sans", Verdana, sans-serif', serif: '"DejaVu Serif", Georgia, serif' };
@@ -179,7 +182,7 @@ function pill(ctx, txt, x, y, p, o = {}) { // x,y = canto sup. esquerdo
   const ox = o.origin === 'center' ? x + w / 2 : x;
   ctx.translate(ox, y + h / 2); ctx.scale(s, s); ctx.translate(-ox, -(y + h / 2));
   ctx.fillStyle = o.bg || T.accent; rrect(ctx, x, y, w, h, h / 2); ctx.fill();
-  ctx.fillStyle = o.color || '#0c1611'; ctx.fillText(txt, x + (o.padX ?? 28), y + (o.padY ?? 14) + size * .86);
+  ctx.fillStyle = o.color || T.bg; ctx.fillText(txt, x + (o.padX ?? 28), y + (o.padY ?? 14) + size * .86);
   ctx.restore();
   return w;
 }
@@ -207,7 +210,7 @@ function drawPhoto(ctx, img, box, lt, dur, o = {}) {
     const k = Math.max(box.w / img.naturalWidth, box.h / img.naturalHeight) * s;
     const iw = img.naturalWidth * k, ih = img.naturalHeight * k;
     x.drawImage(img, box.x + (box.w - iw) / 2 + tx, box.y + (box.h - ih) / 2 + ty, iw, ih);
-  } else { x.fillStyle = '#1d3326'; x.fillRect(box.x, box.y, box.w, box.h); }
+  } else { x.fillStyle = shade(T.bg, .07); x.fillRect(box.x, box.y, box.w, box.h); }
   x.restore();
   // fade topo
   if ((o.fadeTop ?? .3) > 0) {
@@ -218,7 +221,7 @@ function drawPhoto(ctx, img, box, lt, dur, o = {}) {
   x.globalCompositeOperation = 'source-over';
   }
   const g2 = x.createLinearGradient(0, box.y + box.h * .55, 0, box.y + box.h);
-  g2.addColorStop(0, 'rgba(12,22,17,0)'); g2.addColorStop(1, 'rgba(12,22,17,.92)');
+  g2.addColorStop(0, rgba(T.bg, 0)); g2.addColorStop(1, rgba(T.bg, .92));
   x.fillStyle = g2; x.fillRect(box.x, box.y + box.h * .55, box.w, box.h * .45);
   ctx.drawImage(L.c, 0, 0, W, H);
 }
@@ -236,7 +239,7 @@ function drawBg(ctx, t) {
   ctx.fillStyle = T.bg; ctx.fillRect(0, 0, W, H);
   ctx.save(); ctx.translate(.85 * W, .1 * H); ctx.scale(1, 1344 / 1296);
   const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1296 * 1.05);
-  g.addColorStop(0, '#1d3326'); g.addColorStop(.45, '#13241b'); g.addColorStop(1, '#0c1611');
+  g.addColorStop(0, shade(T.bg, .07)); g.addColorStop(.45, shade(T.bg, .03)); g.addColorStop(1, T.bg);
   ctx.fillStyle = g; ctx.fillRect(-2 * W, -2 * H, 4 * W, 4 * H); ctx.restore();
   ctx.strokeStyle = rgba(T.accent, .075); ctx.lineWidth = 2;
   for (let i = 0; i < 16; i++) {

@@ -3,7 +3,7 @@ const $ = s => document.querySelector(s);
 const CDUR = 5.0, CSTORE = 'nqc-cartela-v1';
 const CPADRAO = {
   formato: 'v', serie: 'Números que Contam', chamada: '', titulo: '', subtitulo: '',
-  logo: 'assets/exemplo/logo-embrapa.png', assinatura: 'Embrapa Territorial', link: 'www.embrapa.br/territorial', cor: '#E3B76F', som: true
+  logo: 'assets/exemplo/logo-embrapa.png', assinatura: 'Embrapa Territorial', link: 'www.embrapa.br/territorial', cor: '#E3B76F', fundo: '#0c1611', som: true
 };
 let K = Object.assign({}, CPADRAO);
 try { const s = localStorage.getItem(CSTORE); if (s) K = Object.assign(K, JSON.parse(s)); } catch (e) { }
@@ -20,7 +20,7 @@ const dims = () => K.formato === 'h' ? [1920, 1080] : [1080, 1920];
 
 function renderCartela(ctx, t, scale) {
   SC = scale; ctx.setTransform(scale, 0, 0, scale, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none';
-  T.accent = K.cor || '#E3B76F';
+  T.accent = K.cor || '#E3B76F'; T.bg = K.fundo || '#0c1611';
   const KK = Object.assign({}, K, { serie: K.serie });
   (K.formato === 'h' ? drawEndcardH : drawEndcard)(ctx, t, KK);
 }
@@ -76,8 +76,9 @@ for (const [k, rot, aj] of CAMPOS) {
   $('#lfile').onchange = e => { const f = e.target.files[0]; if (!f) return; const fr = new FileReader(); fr.onload = () => { K.logo = fr.result; paint(); waitImg(K.logo).then(changed); }; fr.readAsDataURL(f); };
   $('#lpadrao').onclick = () => { K.logo = CPADRAO.logo; paint(); waitImg(K.logo).then(changed); };
   const c = document.createElement('div'); c.className = 'grid2';
-  c.innerHTML = `<div class="campo"><label for="c_cor">Cor de destaque</label><input id="c_cor" type="color" style="width:60px;height:38px"></div><div class="campo check"><input id="c_som" type="checkbox"><label for="c_som">Efeito sonoro (whoosh)</label></div>`;
+  c.innerHTML = `<div class="campo"><label for="c_cor">Cor de destaque</label><input id="c_cor" type="color" style="width:60px;height:38px"></div><div class="campo"><label for="c_fundo">Cor de fundo</label><select id="c_fundo"></select></div><div class="campo check"><input id="c_som" type="checkbox"><label for="c_som">Efeito sonoro (whoosh)</label></div>`;
   box.append(c);
+  const sf = $('#c_fundo'); FUNDOS.forEach(([n, c]) => sf.add(new Option(n, c))); sf.value = K.fundo || FUNDOS[0][1]; sf.onchange = () => { K.fundo = sf.value; changed(); };
   $('#c_cor').value = K.cor; $('#c_cor').oninput = e => { K.cor = e.target.value; changed(); };
   $('#c_som').checked = K.som !== false; $('#c_som').onchange = e => { K.som = e.target.checked; save(); };
 }
