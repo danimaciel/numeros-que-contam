@@ -18,6 +18,30 @@ async function pickAudioConfig() {
   return null;
 }
 
+// codifica o áudio inteiro antes do vídeo e guarda os pedaços, para depois intercalá-los
+async function encodeAudioChunks(audio, acfg) {
+  if (!acfg) return [];
+  const out = []; let err = null;
+  const aenc = new AudioEncoder({ output: (c, m) => out.push([c, m]), error: e => err = e });
+  aenc.configure(acfg.cfg);
+  const L = audio.getChannelData(0), R = audio.getChannelData(1), step = 4800;
+  for (let off = 0; off < L.length; off += step) {
+    const n = Math.min(step, L.length - off), data = new Float32Array(n * 2);
+    data.set(L.subarray(off, off + n), 0); data.set(R.subarray(off, off + n), n);
+    const ad = new AudioData({ format: 'f32-planar', sampleRate: SR, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round(off / SR * 1e6), data });
+    aenc.encode(ad); ad.close();
+  }
+  await aenc.flush(); aenc.close();
+  if (err) throw err;
+  return out;
+}
+// intercala áudio e vídeo no MP4 (sem isso, o áudio fica todo no fim do arquivo e trava em muitos players)
+function interleaver(muxer, aChunks) {
+  let ai = 0;
+  const flushTo = t => { while (ai < aChunks.length && aChunks[ai][0].timestamp <= t) { muxer.addAudioChunk(aChunks[ai][0], aChunks[ai][1]); ai++; } };
+  return { video(c, m) { flushTo(c.timestamp); muxer.addVideoChunk(c, m); }, rest() { flushTo(Infinity); } };
+}
+
 // onProgress(fração, texto); retorna Blob
 async function exportMP4(P, onProgress = () => { }, isCancelled = () => false) {
   if (!exportSupported()) throw new Error('Este navegador não tem os recursos de vídeo necessários. Use o Google Chrome ou o Microsoft Edge atualizados.');
@@ -34,7 +58,9 @@ async function exportMP4(P, onProgress = () => { }, isCancelled = () => false) {
     audio: acfg ? { codec: acfg.mux, sampleRate: SR, numberOfChannels: 2 } : undefined,
   });
   let err = null;
-  const venc = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: e => err = e });
+  onProgress(.01, 'Codificando o áudio…');
+  const mix = interleaver(muxer, await encodeAudioChunks(audio, acfg));
+  const venc = new VideoEncoder({ output: (c, m) => mix.video(c, m), error: e => err = e });
   venc.configure(vcfg);
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d', { alpha: false });
@@ -50,20 +76,7 @@ async function exportMP4(P, onProgress = () => { }, isCancelled = () => false) {
   }
   await venc.flush(); venc.close();
   if (err) throw err;
-  if (acfg) {
-    onProgress(.96, 'Codificando o áudio…');
-    const aenc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: e => err = e });
-    aenc.configure(acfg.cfg);
-    const L = audio.getChannelData(0), R = audio.getChannelData(1), step = 4800;
-    for (let off = 0; off < L.length; off += step) {
-      const n = Math.min(step, L.length - off), data = new Float32Array(n * 2);
-      data.set(L.subarray(off, off + n), 0); data.set(R.subarray(off, off + n), n);
-      const ad = new AudioData({ format: 'f32-planar', sampleRate: SR, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round(off / SR * 1e6), data });
-      aenc.encode(ad); ad.close();
-    }
-    await aenc.flush(); aenc.close();
-    if (err) throw err;
-  }
+  mix.rest();
   muxer.finalize();
   onProgress(1, 'Pronto!');
   return new Blob([target.buffer], { type: 'video/mp4' });

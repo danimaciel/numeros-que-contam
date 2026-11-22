@@ -102,7 +102,8 @@ async function exportCartela(onProgress = () => { }) {
   const target = new Mp4Muxer.ArrayBufferTarget();
   const muxer = new Mp4Muxer.Muxer({ target, fastStart: 'in-memory', firstTimestampBehavior: 'offset', video: { codec: 'avc', width: w, height: h, frameRate: FPS }, audio: acfg ? { codec: acfg.mux, sampleRate: SR, numberOfChannels: 2 } : undefined });
   let err = null;
-  const venc = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: e => err = e });
+  const mix = interleaver(muxer, await encodeAudioChunks(audio, acfg));
+  const venc = new VideoEncoder({ output: (c, m) => mix.video(c, m), error: e => err = e });
   venc.configure(vcfg);
   const c = document.createElement('canvas'); c.width = w; c.height = h; const ctx = c.getContext('2d', { alpha: false });
   const N = Math.round(CDUR * FPS), us = 1e6 / FPS;
@@ -115,18 +116,7 @@ async function exportCartela(onProgress = () => { }) {
     if (i % 5 === 0) { onProgress(i / N * .95, `Gerando quadros… ${i}/${N}`); await new Promise(r => setTimeout(r, 0)); }
   }
   await venc.flush(); venc.close();
-  if (acfg) {
-    const aenc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: e => err = e });
-    aenc.configure(acfg.cfg);
-    const L = audio.getChannelData(0), R = audio.getChannelData(1);
-    for (let off = 0; off < L.length; off += 4800) {
-      const n = Math.min(4800, L.length - off), data = new Float32Array(n * 2);
-      data.set(L.subarray(off, off + n), 0); data.set(R.subarray(off, off + n), n);
-      const ad = new AudioData({ format: 'f32-planar', sampleRate: SR, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round(off / SR * 1e6), data });
-      aenc.encode(ad); ad.close();
-    }
-    await aenc.flush(); aenc.close();
-  }
+  mix.rest();
   if (err) throw err;
   muxer.finalize(); onProgress(1, 'Pronto!');
   return new Blob([target.buffer], { type: 'video/mp4' });
