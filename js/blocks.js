@@ -26,20 +26,24 @@ BLOCKS.abertura = {
   nome: 'Abertura com foto', desc: 'Foto com movimento lento e uma pergunta ou título forte.',
   dur: 2.8, enter: 'cut', exit: 'zoom', eout: .42, cue: 'rise',
   campos: [
+    { k: 'etiqueta', tipo: 'texto', rotulo: 'Etiqueta acima do título (opcional)', ajuda: 'Ex.: CAPACITAÇÃO ON-LINE · LANÇAMENTO' },
     { k: 'titulo', tipo: 'texto-longo', rotulo: 'Título', ajuda: 'Curto, 2 a 4 linhas. Use | para quebrar linha.' },
     { k: 'foto', tipo: 'imagem', rotulo: 'Foto (vertical ou horizontal)' },
     { k: 'credito', tipo: 'texto', rotulo: 'Crédito da foto' },
     { k: 'subtitulo', tipo: 'texto', rotulo: 'Subtítulo (opcional)' },
   ],
   make(d) {
-    const L = layoutRich(d.titulo, { cls: 'big', maxLines: 4, w: 920 });
+    const tag = (d.etiqueta || '').trim().toUpperCase();
+    const L = layoutRich(d.titulo, { cls: 'big', maxLines: tag ? 5 : 4, w: 920 });
     const S = d.subtitulo ? layoutRich(d.subtitulo, { cls: 'sm', maxLines: 2, w: 920 }) : null;
+    const ty = tag ? TITLE_Y + 100 : TITLE_Y;
     const cr = (d.credito || '').trim();
     return {
       src: cr ? (/^foto/i.test(cr) ? cr : 'Foto: ' + cr) : '',
       draw(x, lt, dur) {
         drawPhoto(x, img(d.foto), { x: 0, y: 655, w: W, h: 1265 }, lt, dur, { s0: 1.25, s1: 1.02, x0: 30, x1: -20 });
-        drawRich(x, L, 80, TITLE_Y, lt - .1, { stagger: .07 });
+        if (tag) pill(x, tag, 80, TITLE_Y, prog(lt, .02, .4), { size: 30, padX: 26, padY: 14 });
+        drawRich(x, L, 80, ty, lt - (tag ? .25 : .1), { stagger: tag ? .045 : .07 });
         if (S) drawRich(x, S, 80, 1560, lt - .9, { stagger: .03 });
       }
     };
@@ -512,6 +516,53 @@ BLOCKS.lista = {
             x.restore();
           }
         });
+      }
+    };
+  }
+};
+
+// ---------------------------------------------------------------- ETIQUETAS
+BLOCKS.etiquetas = {
+  nome: 'Etiquetas (público, temas)', desc: 'Palavras ou expressões curtas que surgem como etiquetas. Bom para “para quem é” ou temas.',
+  dur: 3.6, enter: 'zoom', exit: 'up', cue: 'whoosh',
+  campos: [
+    { k: 'titulo', tipo: 'texto-longo', rotulo: 'Título', ajuda: 'Ex.: Para quem *é?*' },
+    { k: 'itens', tipo: 'lista', rotulo: 'Etiquetas (uma por linha, até 10)', ajuda: 'Ex.:\nGestores públicos\nCooperativas\nEstudantes' },
+    { k: 'complemento', tipo: 'texto-longo', rotulo: 'Complemento (opcional)' },
+    { k: 'fonte', tipo: 'texto', rotulo: 'Rodapé (opcional)' },
+  ],
+  make(d) {
+    const L = title(d.titulo);
+    const items = String(d.itens || '').split('\n').map(l => l.trim()).filter(Boolean).slice(0, 10);
+    const C = layoutRich(d.complemento, { cls: 'sm', maxLines: 3, w: 920 });
+    let size = 42, rows;
+    const lay = sz => {
+      const out = [[]]; let w = 0;
+      setFont(_mc, sz, true);
+      items.forEach(t => { const pw = _mc.measureText(t).width + sz * 1.3; if (w && w + 24 + pw > 920) { out.push([]); w = 0; } out[out.length - 1].push({ t, pw }); w += (w ? 24 : 0) + pw; });
+      return out;
+    };
+    for (size = 56; size > 26; size -= 2) { rows = lay(size); if (rows.length * (size * 2.1 + 26) < 1000 && rows.every(r => r.every(c => c.pw <= 940))) break; }
+    const rh = size * 2.1 + 26, gh = rows.length * rh;
+    const y0 = Math.max(tBottom(L) + 100, (tBottom(L) + 1660) / 2 - (gh + (C.empty ? 0 : C.height + 60)) / 2);
+    let k = 0;
+    const chips = [];
+    rows.forEach((r, ri) => { const tw = r.reduce((a, c) => a + c.pw, 0) + 24 * (r.length - 1); let x0 = 540 - tw / 2; r.forEach(c => { chips.push({ ...c, x: x0, y: y0 + ri * rh, i: k++ }); x0 += c.pw + 24; }); });
+    return {
+      src: d.fonte,
+      draw(x, lt) {
+        drawRich(x, L, 80, TITLE_Y, lt - .05);
+        const st = Math.min(.14, 1.4 / Math.max(1, chips.length));
+        chips.forEach(c => {
+          const p = E.back(prog(lt, .35 + c.i * st, .75 + c.i * st)); if (p <= 0) return;
+          const h = size * 2.1, cx = c.x + c.pw / 2, cy = c.y + h / 2 + Math.sin(lt * 1.6 + c.i) * 4;
+          x.save(); x.globalAlpha = clamp(p * 2); x.translate(cx, cy); x.scale(p, p); x.translate(-cx, -cy);
+          rrect(x, c.x, cy - h / 2, c.pw, h, h / 2); x.fillStyle = rgba(T.accent, c.i % 3 === 0 ? .9 : .12); x.fill();
+          x.lineWidth = 2.5; x.strokeStyle = rgba(T.accent, .8); x.stroke();
+          drawText(x, c.t, cx, cy + size * .36, { size, bold: true, color: c.i % 3 === 0 ? T.bg : T.cream, align: 'center' });
+          x.restore();
+        });
+        drawRich(x, C, 80, y0 + gh + 50, lt - 1.4, { align: 'center', stagger: .03 });
       }
     };
   }

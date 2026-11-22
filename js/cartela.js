@@ -240,7 +240,7 @@ function drawEndcard(x, lt, K) {
   if (!isBare(K)) { x.globalAlpha = a(2.9); x.fillStyle = T.accent; x.fillRect(540 - 50 * a(2.9), ty, 100 * a(2.9), 3); }
   const tt = (K.titulo || '').toUpperCase();
   if (tt) { x.globalAlpha = a(3.0); drawText(x, tt, 540, ty + 70 + dy(3.0), { size: fitSize(tt, 40, 920), bold: true, color: ESC.cream, align: 'center', ls: 1 }); }
-  if (K.subtitulo) { x.globalAlpha = a(3.15); drawText(x, K.subtitulo, 540, ty + 118 + dy(3.15), { size: fitSize(K.subtitulo, 28, 920, false), color: '#9AA89F', align: 'center' }); }
+  if (K.subtitulo) { x.globalAlpha = a(3.15); drawText(x, K.subtitulo, 540, ty + 118 + dy(3.15), { size: 30, color: '#B9C2BC', align: 'center', w: 900, lh: 40 }); }
   x.restore();
   // faixa clara com logo, assinatura e link
   const fp = E.out5(prog(lt, 2.7, 3.4)), fy = lerp(1960, 1585, fp);
