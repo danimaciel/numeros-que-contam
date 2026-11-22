@@ -19,7 +19,10 @@ async function decodeAudio(src) {
 function makeWhoosh(dur, f0, f1, amp, seed) {
   const n = Math.floor(SR * dur), y = new Float32Array(n);
   let s = seed || 7, a = 0;
-  const rnd = () => { s = (s * 16807) % 2147483647; return s / 2147483647 * 2 - 1; };
+  // ruído gaussiano (Box-Muller), igual ao usado nos vídeos do café; ruído uniforme deixava o efeito ~8 dB mais alto e áspero
+  const uni = () => { s = (s * 16807) % 2147483647; return (s + 1) / 2147483648; };
+  let spare = null;
+  const rnd = () => { if (spare !== null) { const v = spare; spare = null; return v; } const u = uni(), v = uni(), r = Math.sqrt(-2 * Math.log(u)); spare = r * Math.sin(2 * Math.PI * v); return r * Math.cos(2 * Math.PI * v); };
   for (let i = 0; i < n; i++) {
     const t = i / SR, fc = f0 * Math.pow(f1 / f0, Math.pow(Math.sin(Math.PI * t / dur), 1.2));
     const k = 1 - Math.exp(-2 * Math.PI * fc / SR); a += k * (rnd() - a); y[i] = a;
