@@ -157,7 +157,9 @@ function renderForm() {
   // projeto
   root.append(h('section', { class: 'card' },
     h('h2', {}, 'Projeto'),
-    field(P, { k: 'tema', rotulo: 'Tema do vídeo', ajuda: 'Aparece no topo de todas as cenas. Ex.: Trigo, Aquicultura, Feijão.' }),
+    h('div', { class: 'grid2' },
+      field(P, { k: 'serie', rotulo: 'Nome da série (cabeçalho)', ajuda: 'Ex.: Números que Contam' }),
+      field(P, { k: 'tema', rotulo: 'Tema do vídeo', ajuda: 'Aparece abaixo do cabeçalho. Ex.: Trigo, Aquicultura.' })),
     h('div', { class: 'grid2' },
       h('div', { class: 'campo' }, h('label', {}, 'Cor de destaque'), colorPicker('cor')),
       h('div', { class: 'campo' }, h('label', {}, 'Cor secundária'), colorPicker('cor2')),

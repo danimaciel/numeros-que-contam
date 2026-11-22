@@ -24,6 +24,8 @@ Quem usa preenche um formulário (textos, números, fotos) e baixa um MP4 pronto
    | Ranking (barras) | Até 8 itens, no formato `Nome; valor` |
    | Evolução no tempo (linha) | Série anual, no formato `Ano; valor`, com o pico destacado |
    | Mapa do Brasil por estado | Formato `UF; valor` ou `Nome do estado; valor` |
+   | Lista numerada | De 2 a 6 itens (módulos, etapas, perfis), no formato `Título; detalhe` |
+   | Tela com zoom (print) | Print de painel ou site que entra e aproxima um ponto |
    | Frase de impacto | Frase grande, com foto de fundo opcional |
    | Chamada final (link) | Convite para acessar um painel ou site, com print opcional |
 

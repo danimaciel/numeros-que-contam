@@ -125,8 +125,8 @@ BLOCKS.dois = {
   make(d) {
     const L = title(d.titulo);
     const A = parseFig(d.a_numero), B = parseFig(d.b_numero);
-    const size = Math.min(fitSize(figStr(A), 150, 430, true, -6), fitSize(figStr(B), 150, 430, true, -6));
-    const LA = layoutRich(d.a_legenda, { cls: 'unit', size: 36, maxLines: 4, w: 430 }), LB = layoutRich(d.b_legenda, { cls: 'unit', size: 36, maxLines: 4, w: 430 });
+    const size = Math.min(fitSize(figStr(A), 200, 430, true, -6), fitSize(figStr(B), 200, 430, true, -6));
+    const LA = layoutRich(d.a_legenda, { cls: 'unit', size: 38, maxLines: 4, w: 430 }), LB = layoutRich(d.b_legenda, { cls: 'unit', size: 38, maxLines: 4, w: 430 });
     const C = layoutRich(d.complemento, { cls: 'md', maxLines: 3, w: 920 });
     const capH = Math.max(LA.height, LB.height);
     const bothPct = [A, B].every(f => f.suf.trim() === '%' && f.v <= 100);
@@ -466,6 +466,109 @@ BLOCKS.fechamento = {
   }
 };
 
+// ---------------------------------------------------------------- LISTA
+BLOCKS.lista = {
+  nome: 'Lista numerada', desc: 'De 2 a 6 itens que entram um a um, ligados por uma linha. Bom para módulos, etapas, perfis ou elos de uma cadeia.',
+  dur: 4.6, enter: 'up', exit: 'up', cue: 'whoosh',
+  campos: [
+    { k: 'titulo', tipo: 'texto-longo', rotulo: 'Título' },
+    { k: 'itens', tipo: 'lista', rotulo: 'Itens (um por linha: Título; detalhe opcional)', ajuda: 'Ex.:\nMódulo 1; Panorama da cadeia do trigo\nMódulo 2; Acesso aos dados' },
+    { k: 'fonte', tipo: 'texto', rotulo: 'Fonte ou rodapé (opcional)' },
+  ],
+  make(d) {
+    const L = title(d.titulo);
+    const items = String(d.itens || '').split('\n').map(l => l.trim()).filter(Boolean).slice(0, 6).map(l => {
+      const i = l.indexOf(';'); return i < 0 ? { t: l, s: '' } : { t: l.slice(0, i).trim(), s: l.slice(i + 1).trim() };
+    });
+    const n = Math.max(1, items.length), y0 = tBottom(L) + 90;
+    const anyS = items.some(it => it.s);
+    const gap = clamp((1680 - y0) / n, 130, anyS ? 300 : 210);
+    const yy = y0 + Math.max(0, (1680 - y0 - gap * n) / 2);
+    const big = n <= 4 ? 56 : 48;
+    const ts = Math.min(big, ...items.map(it => fitSize(it.t, big, 820)));
+    const ss = Math.min(36, ...items.map(it => it.s ? fitSize(it.s, 36, 820, false) : 36));
+    const ty = it => it.s ? -ts * .35 : ts * .35;
+    return {
+      src: d.fonte,
+      draw(x, lt) {
+        drawRich(x, L, 80, TITLE_Y, lt - .05);
+        if (!items.length) return;
+        const st = Math.min(.3, 1.8 / n);
+        const lp = E.inout(prog(lt, .4, .4 + st * (n - 1) + .3));
+        if (n > 1) { x.fillStyle = rgba(T.accent, .35); x.fillRect(112, yy, 3, (n - 1) * gap * lp); }
+        items.forEach((it, i) => {
+          const t0 = .45 + i * st, cy = yy + i * gap;
+          const pc = E.back(prog(lt, t0, t0 + .35)), pt = E.out5(prog(lt, t0 + .08, t0 + .6));
+          if (pc > 0) {
+            x.save(); x.translate(114, cy); x.scale(pc, pc);
+            x.beginPath(); x.arc(0, 0, 42, 0, Math.PI * 2); x.fillStyle = T.accent; x.fill();
+            drawText(x, String(i + 1), 0, 14, { size: 38, bold: true, color: T.bg, align: 'center' });
+            x.restore();
+          }
+          if (pt > 0) {
+            x.save(); x.globalAlpha = pt; x.translate((1 - pt) * 50, 0);
+            drawText(x, it.t, 190, cy + ty(it), { size: ts, bold: true, color: T.cream });
+            if (it.s) drawText(x, it.s, 190, cy + ty(it) + ss * 1.5, { size: ss, color: '#B9C2BC' });
+            x.restore();
+          }
+        });
+      }
+    };
+  }
+};
+
+// ---------------------------------------------------------------- TELA (print com zoom)
+BLOCKS.tela = {
+  nome: 'Tela com zoom (print)', desc: 'Um print de painel ou site entra em cena e a câmera se aproxima de um ponto.',
+  dur: 4.4, enter: 'up', exit: 'shrink', cue: 'whoosh',
+  campos: [
+    { k: 'titulo', tipo: 'texto-longo', rotulo: 'Título' },
+    { k: 'imagem', tipo: 'imagem', rotulo: 'Print (imagem horizontal funciona melhor)' },
+    { k: 'foco_x', tipo: 'texto', rotulo: 'Ponto de zoom: horizontal (0 a 100)', ajuda: '0 = borda esquerda, 50 = centro, 100 = borda direita' },
+    { k: 'foco_y', tipo: 'texto', rotulo: 'Ponto de zoom: vertical (0 a 100)', ajuda: '0 = topo, 100 = base' },
+    { k: 'zoom', tipo: 'texto', rotulo: 'Aproximação (1 = sem zoom, 2 = dobro)', ajuda: 'Padrão: 1,6' },
+    { k: 'legenda', tipo: 'texto', rotulo: 'Etiqueta (opcional)', ajuda: 'Aparece em destaque sobre a tela. Ex.: Painel de exportação' },
+    { k: 'complemento', tipo: 'texto-longo', rotulo: 'Complemento (opcional)' },
+    { k: 'fonte', tipo: 'texto', rotulo: 'Fonte ou rodapé (opcional)' },
+  ],
+  make(d) {
+    const L = title(d.titulo);
+    const fx = clamp((parseNum(d.foco_x).ok ? parseNum(d.foco_x).v : 50) / 100), fy = clamp((parseNum(d.foco_y).ok ? parseNum(d.foco_y).v : 50) / 100);
+    const zm = clamp(parseNum(d.zoom).ok ? parseNum(d.zoom).v : 1.6, 1, 4);
+    const C = layoutRich(d.complemento, { cls: 'md', size: 48, maxLines: 3, w: 920 });
+    const lsz = d.legenda ? fitSize(d.legenda, 30, 820) : 30;
+    return {
+      src: d.fonte,
+      draw(x, lt, dur) {
+        drawRich(x, L, 80, TITLE_Y, lt - .05);
+        const I = img(d.imagem);
+        const cw = 940, top = Math.max(tBottom(L) + 80, 560);
+        const ratio = I && I.naturalWidth ? I.naturalHeight / I.naturalWidth : .6;
+        const maxH = 1560 - top - (C.empty ? 0 : C.height + 60);
+        const chh = Math.min(cw * ratio * 1.25, maxH);
+        const p = E.out5(prog(lt, .1, .9));
+        x.save(); x.globalAlpha = clamp(p * 2);
+        x.translate(540, top + chh / 2 + (1 - p) * 420); x.rotate((1 - p) * -4 * Math.PI / 180); x.scale(1, 1 - (1 - p) * .2); x.translate(-540, -(top + chh / 2));
+        x.shadowColor = 'rgba(0,0,0,.55)'; x.shadowBlur = 70; x.shadowOffsetY = 26;
+        x.fillStyle = '#fff'; rrect(x, 70, top, cw, chh, 20); x.fill(); x.shadowColor = 'transparent';
+        if (I && I.naturalWidth) {
+          x.save(); rrect(x, 70, top, cw, chh, 20); x.clip();
+          const z = lerp(1, zm, E.inout(prog(lt, 1.0, Math.max(1.6, dur - .7))));
+          const base = Math.max(cw / I.naturalWidth, chh / I.naturalHeight), k = base * z;
+          const iw = I.naturalWidth * k, ih = I.naturalHeight * k;
+          let ix = 70 + cw / 2 - fx * iw, iy = top + chh / 2 - fy * ih;
+          ix = clamp(ix, 70 + cw - iw, 70); iy = clamp(iy, top + chh - ih, top);
+          x.drawImage(I, ix, iy, iw, ih);
+          x.restore();
+        }
+        x.restore();
+        if (d.legenda) { setFont(x, lsz, true); const pw = x.measureText(d.legenda).width + 60; pill(x, d.legenda, 540 - pw / 2, top + chh - 40, E.out5(prog(lt, 1.1, 1.5)), { size: lsz, padX: 30, padY: 16, origin: 'center' }); }
+        drawRich(x, C, 80, top + chh + 70, lt - 1.4);
+      }
+    };
+  }
+};
+
 // ---------------------------------------------------------------- LINHA DO TEMPO DO VÍDEO
 const TOTAL = 30, END_A = 25.2, BODY_END = 25.5, OV = .1;
 function buildTimeline(P) {
@@ -491,7 +594,7 @@ function buildTimeline(P) {
   const minDur = Math.min(...scenes.map(s => s.b - s.a));
   return {
     P, total: TOTAL, bodyEnd, scenes, minDur,
-    endcard: hasEnd ? { a: END_A, draw: (x, lt) => drawEndcard(x, lt, P.cartela) } : null,
+    endcard: hasEnd ? { a: END_A, draw: (x, lt) => drawEndcard(x, lt, Object.assign({ serie: P.serie }, P.cartela)) } : null,
     cues: scenes.map(s => ({ t: s.a, type: s.cue || 'whoosh' })).concat(hasEnd ? [{ t: END_A - .1, type: 'whoosh', amp: .8 }] : [])
   };
 }
