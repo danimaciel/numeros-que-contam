@@ -13,6 +13,7 @@ Quem usa preenche um formulário (textos, números, fotos) e baixa um MP4 pronto
    - a cor de fundo (escura, que a cartela final também acompanha);
    - o símbolo do fundo;
    - a música.
+   - a vinheta de abertura da série (1,5 s), com o número do episódio, se quiser.
 3. Em **Cenas**, monte o vídeo com 4 a 7 cenas. O tempo de cada cena é ajustado sozinho para o vídeo fechar em 30 s.
 
    | Cena | Para quê |

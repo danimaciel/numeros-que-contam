@@ -113,7 +113,7 @@ function field(obj, f, onAfter) {
   if (f.tipo === 'texto-longo' || f.tipo === 'lista') {
     input = h('textarea', { id, rows: f.tipo === 'lista' ? 6 : 2, class: f.tipo === 'lista' ? 'mono' : '', value: obj[f.k] || '', oninput: e => { obj[f.k] = e.target.value; changed(); } });
   } else if (f.tipo === 'check') {
-    input = h('input', { id, type: 'checkbox', checked: !!obj[f.k], onchange: e => { obj[f.k] = e.target.checked; changed(); } });
+    input = h('input', { id, type: 'checkbox', checked: !!obj[f.k], onchange: e => { obj[f.k] = e.target.checked; changed(!!f.rerender); } });
     return h('div', { class: 'campo check' }, input, lab, help);
   } else if (f.tipo === 'imagem') {
     const thumb = h('div', { class: 'thumb' });
@@ -145,7 +145,7 @@ function colorPicker(key, lista = CORES) {
 const timeLabels = [];
 function updateTimes() {
   if (!TL) return;
-  TL.scenes.forEach((s, i) => { if (timeLabels[i]) timeLabels[i].textContent = `${s.a.toFixed(1).replace('.', ',')}–${s.b.toFixed(1).replace('.', ',')} s`; });
+  TL.scenes.filter(s => !s.vinheta).forEach((s, i) => { if (timeLabels[i]) timeLabels[i].textContent = `${s.a.toFixed(1).replace('.', ',')}–${s.b.toFixed(1).replace('.', ',')} s`; });
   const w = $('#aviso');
   const n = (P.blocos || []).length;
   w.textContent = !n ? 'Adicione pelo menos uma cena.' : TL.minDur < 2.6 ? `Com ${n} cenas, cada uma fica curta (${TL.minDur.toFixed(1).replace('.', ',')} s). O ideal é de 4 a 7 cenas.` : '';
@@ -177,6 +177,8 @@ function renderForm() {
       }), h('div', { class: 'ajuda' }, P.musicaArquivo ? 'Arquivo carregado.' : 'Nenhum arquivo ainda.')),
       field(P, { k: 'musicaInicio', rotulo: 'Começar a música em (segundos)', ajuda: 'Ex.: 10' })) : null,
     field(P, { k: 'efeitos', tipo: 'check', rotulo: 'Efeitos sonoros nas transições' }),
+    field(P.vinheta = P.vinheta || { ativa: false, episodio: '' }, { k: 'ativa', tipo: 'check', rotulo: 'Abrir com a vinheta da série (1,5 s)', rerender: true }),
+    P.vinheta.ativa ? field(P.vinheta, { k: 'episodio', rotulo: 'Número do episódio (opcional)', ajuda: 'Aparece na vinheta junto com o tema. Ex.: 3 → “Nº 03 · TRIGO”' }) : null,
   ));
   // cenas
   const list = h('div', { class: 'cenas' });
@@ -189,7 +191,7 @@ function renderForm() {
         h('span', { class: 'num' }, String(i + 1)),
         h('span', { class: 'nome' }, def.nome), tl,
         h('span', { class: 'acoes' },
-          h('button', { type: 'button', title: 'Ver na prévia', onclick: e => { e.preventDefault(); pause(); tNow = (TL?.scenes[i]?.a || 0) + .02; requestDraw(); } }, '👁'),
+          h('button', { type: 'button', title: 'Ver na prévia', onclick: e => { e.preventDefault(); pause(); tNow = (TL?.scenes.filter(s => !s.vinheta)[i]?.a || 0) + .02; requestDraw(); } }, '👁'),
           h('button', { type: 'button', title: 'Subir', disabled: i === 0, onclick: e => { e.preventDefault(); [P.blocos[i - 1], P.blocos[i]] = [P.blocos[i], P.blocos[i - 1]]; changed(true); } }, '↑'),
           h('button', { type: 'button', title: 'Descer', disabled: i === P.blocos.length - 1, onclick: e => { e.preventDefault(); [P.blocos[i + 1], P.blocos[i]] = [P.blocos[i], P.blocos[i + 1]]; changed(true); } }, '↓'),
           h('button', { type: 'button', title: 'Duplicar', onclick: e => { e.preventDefault(); P.blocos.splice(i + 1, 0, clone(b)); changed(true); } }, '⧉'),

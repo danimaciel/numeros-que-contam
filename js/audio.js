@@ -36,7 +36,24 @@ function makeWhoosh(dur, f0, f1, amp, seed) {
   return out;
 }
 let _sfx = null;
-function sfxBank() { return _sfx || (_sfx = { whoosh: makeWhoosh(.55, 300, 3800, .5, 7), rise: makeWhoosh(1.2, 150, 2500, .45, 11) }); }
+// som da vinheta: tiques de contador que aceleram e fecham num acorde suave
+function makeSting() {
+  const n = Math.floor(SR * 1.9), y = new Float32Array(n);
+  const tick = (t0, f, amp) => { const i0 = Math.floor(t0 * SR); for (let i = 0; i < SR * .03 && i0 + i < n; i++) { const t = i / SR; y[i0 + i] += amp * Math.sin(2 * Math.PI * f * t) * Math.exp(-t * 180); } };
+  let t = .2, dt = .06;
+  for (let k = 0; t < .74; k++) { tick(t, 2300 + (k % 3) * 260, .22); t += dt; dt = Math.max(.028, dt * .9); }
+  // acorde (lá menor com nona) quando as letras travam
+  const lockT = .78, notes = [220, 329.63, 440, 493.88, 659.25];
+  for (let i = Math.floor(lockT * SR); i < n; i++) {
+    const tt = (i - lockT * SR) / SR, env = Math.min(1, tt / .015) * Math.exp(-tt * 2.4);
+    let v = 0; notes.forEach((f, j) => { v += Math.sin(2 * Math.PI * f * tt + j) * (j ? .55 : .8); });
+    y[i] += v * env * .085;
+  }
+  // sopro sutil até a trava
+  const w = makeWhoosh(.8, 200, 3000, .18, 23); for (let i = 0; i < w.length && i < n; i++) y[i] += w[i];
+  return y;
+}
+function sfxBank() { return _sfx || (_sfx = { whoosh: makeWhoosh(.55, 300, 3800, .5, 7), rise: makeWhoosh(1.2, 150, 2500, .45, 11), vinheta: makeSting() }); }
 
 // mistura final (30 s, estéreo, 48 kHz)
 async function mixAudio(TL, P) {
@@ -60,12 +77,12 @@ async function mixAudio(TL, P) {
     const bank = sfxBank();
     const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 6000; lp.connect(ac.destination);
     for (const c of TL.cues) {
-      const data = c.type === 'rise' ? bank.rise : bank.whoosh;
+      const data = bank[c.type] || bank.whoosh;
       const b = ac.createBuffer(1, data.length, SR); b.copyToChannel(data, 0);
       const s = ac.createBufferSource(); s.buffer = b;
-      const g = ac.createGain(); g.gain.value = .32 * (c.amp || 1);
+      const g = ac.createGain(); g.gain.value = (c.type === 'vinheta' ? 1 : .32) * (c.amp || 1);
       s.connect(g).connect(lp);
-      s.start(Math.max(0, c.t - (c.type === 'rise' ? 0 : .18)));
+      s.start(Math.max(0, c.t - (c.type === 'whoosh' ? .18 : 0)));
     }
   }
   const out = await ac.startRendering();

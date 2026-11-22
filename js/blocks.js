@@ -628,14 +628,16 @@ function buildTimeline(P) {
   const hasEnd = !!(P.cartela && P.cartela.ativa);
   const bodyEnd = hasEnd ? BODY_END : TOTAL;
   const base = list.map(b => BLOCKS[b.tipo].dur);
+  const vin = !!(P.vinheta && P.vinheta.ativa) && typeof drawVinheta === 'function';
+  const start = vin ? VIN_DUR - .25 : 0;               // as cenas começam enquanto a vinheta se desfaz
   const sum = base.reduce((s, v) => s + v, 0) - OV * Math.max(0, list.length - 1);
-  const k = sum > 0 ? bodyEnd / sum : 1;
-  let a = 0, prevExit = '';
+  const k = sum > 0 ? (bodyEnd - start) / sum : 1;
+  let a = start, prevExit = '';
   const scenes = list.map((b, i) => {
     const def = BLOCKS[b.tipo], d = base[i] * k;
     let inst; try { inst = def.make(b.dados || {}, P); } catch (e) { console.error(e); inst = { draw() { } }; }
     const s = {
-      a, b: i === list.length - 1 ? bodyEnd : a + d, enter: prevExit === 'left' && i ? 'left' : (i === 0 ? 'cut' : def.enter), exit: def.exit,
+      a, b: i === list.length - 1 ? bodyEnd : a + d, enter: prevExit === 'left' && i ? 'left' : (i === 0 ? (vin ? 'fade' : 'cut') : def.enter), exit: def.exit,
       ein: .5, eout: def.eout || .38, cue: def.cue, src: inst.src || '', label: P.tema || '', draw: inst.draw, dur: d
     };
     if (i === list.length - 1 && hasEnd) { s.exit = 'none'; }
@@ -643,8 +645,12 @@ function buildTimeline(P) {
     return s;
   });
   const minDur = Math.min(...scenes.map(s => s.b - s.a));
+  if (vin) {
+    const VK = { tema: P.tema, episodio: P.vinheta.episodio };
+    scenes.unshift({ a: 0, b: VIN_DUR, enter: 'cut', exit: 'fade', ein: .5, eout: .3, cue: 'vinheta', src: '', label: '', vinheta: true, draw: (x, lt) => drawVinheta(x, lt, VK), dur: VIN_DUR });
+  }
   return {
-    P, total: TOTAL, bodyEnd, scenes, minDur,
+    P, total: TOTAL, bodyEnd, scenes, minDur, vinEnd: vin ? VIN_DUR : 0,
     endcard: hasEnd ? { a: END_A, draw: (x, lt) => drawEndcard(x, lt, Object.assign({ serie: P.serie }, P.cartela)) } : null,
     cues: scenes.map(s => ({ t: s.a, type: s.cue || 'whoosh' })).concat(hasEnd ? [{ t: END_A - .1, type: 'whoosh', amp: .8 }] : [])
   };

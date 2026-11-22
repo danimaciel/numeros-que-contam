@@ -2,7 +2,7 @@
 const EX = 'assets/exemplo/';
 const FONTE_CENSO = 'Fonte: IBGE, Censo Agropecuário 2017, Tabela 6768 · produtores rurais nos 1.959 municípios com café';
 const EXEMPLO = {
-  serie: 'Números que Contam', tema: 'Café', cor: '#E3B76F', cor2: '#6FBF8A', simbolo: 'grao', musica: 'inovacao', efeitos: true,
+  serie: 'Números que Contam', tema: 'Café', cor: '#E3B76F', cor2: '#6FBF8A', simbolo: 'grao', musica: 'inovacao', efeitos: true, vinheta: { ativa: true, episodio: '1' },
   blocos: [
     { tipo: 'abertura', dados: { titulo: 'Quanto café o|Brasil colheu em|*11 safras?*', foto: EX + 'landscape.jpg', credito: 'Renata Silva' } },
     { tipo: 'numero', dados: { intro: 'De 2014 a 2024,|o Brasil colheu', numero: '572,2', legenda: 'milhões de sacas de 60 kg', complemento: '= *34,3 bilhões* de quilos de café', foto: EX + 'drying.jpg', fonte: 'Fonte: IBGE/Sidra, Tabela 5457 · soma das safras 2014–2024' } },
@@ -17,7 +17,7 @@ const EXEMPLO = {
   }
 };
 const VAZIO = {
-  serie: 'Números que Contam', tema: '', cor: '#E3B76F', cor2: '#6FBF8A', simbolo: 'circulos', musica: 'inovacao', efeitos: true,
+  serie: 'Números que Contam', tema: '', cor: '#E3B76F', cor2: '#6FBF8A', simbolo: 'circulos', musica: 'inovacao', efeitos: true, vinheta: { ativa: true, episodio: '' },
   blocos: [{ tipo: 'abertura', dados: {} }, { tipo: 'numero', dados: {} }, { tipo: 'ranking', dados: {} }, { tipo: 'frase', dados: {} }, { tipo: 'fechamento', dados: {} }],
   cartela: { ativa: true, chamada: '', titulo: '', subtitulo: '', logo: EX + 'logo-embrapa.png', assinatura: 'Embrapa Territorial', link: 'www.embrapa.br/territorial' }
 };

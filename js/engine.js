@@ -287,7 +287,7 @@ function sceneXform(s, lt) {
   const dur = s.b - s.a;
   const pi = s.enter === 'cut' ? 1 : E.out5(prog(lt, 0, s.ein));
   const po = s.exit === 'none' ? 0 : E.in(prog(lt, dur - s.eout, dur));
-  let tx = 0, ty = 0, sc = 1 + lt * .006, op = 1, blur = 0;
+  let tx = 0, ty = 0, sc = s.vinheta ? 1 : 1 + lt * .006, op = 1, blur = 0;
   switch (s.enter) {
     case 'up': ty += (1 - pi) * 220; op *= pi; blur += (1 - pi) * 14; break;
     case 'zoom': sc *= 1 + (1 - pi) * .35; op *= pi; blur += (1 - pi) * 18; break;
@@ -329,6 +329,7 @@ function render(ctx, t, TL, scale = 1) {
     if (s.src) { source = s.src; sa = Math.max(sa, Math.min(prog(lt, .2, .6), 1 - prog(lt, dur - .3, dur))); }
   });
   let ca = 1;
+  if (TL.vinEnd) ca = prog(t, TL.vinEnd - .25, TL.vinEnd);   // moldura entra depois da vinheta
   if (TL.endcard && t >= TL.endcard.a) ca = 1 - prog(t, TL.endcard.a, TL.endcard.a + .3);
   drawChrome(ctx, t, TL.bodyEnd, TL.P, label, source, sa, ca);
   if (TL.endcard && t >= TL.endcard.a) {
